@@ -1,0 +1,94 @@
+<div style="margin: 0 0 1em 0; padding: 1em;">
+ご注文日：{{ created_at | date: "%Y" }}年{{ created_at | date: "%m" }}月{{ created_at | date: "%d" }}日
+</div>
+
+<div style="text-align: center;margin: 0 0 1em 0;" >
+	<span style="font-size:2.5em">領収書</span>
+</div>
+<div style="width: 59%; float: left">
+   <div style="margin: 0 0 1em 0; padding: 1em;">
+	    {% if billing_address.company %}
+	      {{ billing_address.company }}<br/>
+	    {% endif %}
+	    {{ billing_address.last_name}} {{ billing_address.first_name}}様<br/>
+	</div>
+</div>
+
+<div style="width: 41%; float: right">
+	<div style="margin: 0 0 1em 0; padding: 1em;">
+		<img src="#" width="50" style="float:right">
+		〒153-0063<br>
+		東京都目黒区目黒2-11-3<br>
+		フラッグシップ合同会社
+	</div>
+</div>
+
+<hr />
+
+<table class="table-tabular" style="margin: 0 0 1.5em 0;"></table>
+<table class="table-tabular" style="margin: 0 0 1.5em 0;">
+  <thead>
+    <tr>
+      <th style="font-weight:400">品名</th>
+      <th style="font-weight:400">単価</th>
+      <th style="font-weight:400">数量</th>
+      <th style="text-align: right;font-weight:400">金額(税抜)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line_item in line_items %}
+    <tr>
+      <td>{{ line_item.title }}</td>
+      <td>{{line_item.price | money}}</td>
+      <td>{{ line_item.quantity }}</td>
+      <td style="text-align: right;">{{ line_item.price | times: line_item.quantity | money }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<table class="table-tabular" style="margin: 0 0 1.5em 0;width:300px;float:right">
+  <tr>
+    <td>消費税</td>
+    <td style="text-align: right;">{{ tax_price | money }}</td>
+  </tr>
+  <tr>
+    <td>発送料</td><td style="text-align: right;">{{ shipping_price | money }}</td>
+  </tr>
+
+  {% for transaction in transactions %}
+  <tr>
+     <td>決済手数料</td>
+     {% if transaction.gateway == "stripe"%}
+      {% assign payment_transaction = 0 %} 
+      {% elsif transaction.gateway contains "komoju" %}
+      {% assign payment_transaction = 18500 %} 
+     {% else %}
+     {% assign payment_transaction = 42300 %} 
+    {% endif %}
+    <td style="text-align: right;">{{payment_transaction | money }}</td>
+  </tr>
+  {% endfor %}
+
+  <tr>
+    <td>合計</td>
+    <td style="text-align: right;">{{ total_price | plus: payment_transaction | money }}</td>
+  </tr>
+  {% for transaction in transactions %}
+  <tr>
+     <td>お支払い方法</td>
+     {% if transaction.gateway == "stripe"%}
+      <td style="text-align: right;">クレジットカード</td>
+      {% elsif transaction.gateway contains "komoju" %}
+        <td style="text-align: right;">コンビニ決済</td>
+     {% else %}
+        <td style="text-align: right;">代引き</td>
+    {% endif %}
+  </tr>  
+  {% endfor %}
+</table>
+
+{% if note %}
+	<h3 style="margin: 0 0 1em 0; text-align: center;">Note</h3>
+	<p style="text-align: center;">{{ note }}</p>
+{% endif %}
